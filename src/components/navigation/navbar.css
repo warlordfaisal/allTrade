@@ -1,0 +1,262 @@
+/* Importing Google font - Poppins */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap");
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+@font-face {
+  font-family: "Material Symbols Outlined";
+  font-style: normal;
+  font-weight: 100;
+  /* Adjust this as needed */
+  src: url("../../assets/Material_Symbols_Outlined/MaterialLogos.ttf")
+    format("truetype");
+}
+.material-symbols-outlined {
+  font-family: "Material Symbols Outlined";
+  font-weight: 600; /* or adjust as needed */
+  font-style: normal;
+  font-size: 26px; /* Preferred icon size */
+  line-height: 1;
+  display: inline-block; /* Ensures proper alignment */
+  font-variation-settings: "FILL" 0; /* Use 0 for outlined */
+}
+a {
+  text-decoration: none;
+}
+body {
+  min-height: 100vh;
+  background: #f0f4ff;
+  color: #fff;
+  background: rgb(22, 26, 45);
+  background: linear-gradient(
+    204deg,
+    rgba(22, 26, 45, 1) 0%,
+    rgba(79, 82, 186, 0.9948354341736695) 41%,
+    rgba(255, 255, 255, 1) 100%
+  );
+}
+.active-link {
+  background-color: #1F509A; /* Change this to your desired background color */
+  color: white; /* Change this to your desired text color */
+  border-radius: 5px; /* Optional: Add rounded corners */
+}
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 85px;
+  display: flex;
+  overflow-x: hidden;
+  flex-direction: column;
+  background: #161a2d;
+  padding: 25px 20px;
+  transition: all 0.4s ease;
+  z-index: 9999;
+}
+.sidebar:hover {
+  width: 260px;
+}
+.sidebar .sidebar-header {
+  display: flex;
+  align-items: center;
+}
+.sidebar .sidebar-header img {
+  width: 42px;
+  border-radius: 50%;
+}
+.sidebar .sidebar-header h2 {
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: 600;
+  white-space: nowrap;
+  margin-left: 23px;
+  text-decoration: none;
+}
+.sidebar-links h4 {
+  color: #fff;
+  font-weight: 500;
+  white-space: nowrap;
+  margin: 10px 0;
+  position: relative;
+}
+.sidebar-links h4 span {
+  opacity: 0;
+}
+.sidebar:hover .sidebar-links h4 span {
+  opacity: 1;
+}
+.sidebar-links .menu-separator {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 1px;
+  transform: scaleX(1);
+  transform: translateY(-50%);
+  background: #4f52ba;
+  transform-origin: right;
+  transition-delay: 0.2s;
+}
+.sidebar:hover .sidebar-links .menu-separator {
+  transition-delay: 0s;
+  transform: scaleX(0);
+}
+.sidebar-links {
+  list-style: none;
+  margin-top: 20px;
+  height: 80%;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.sidebar-links::-webkit-scrollbar {
+  display: none;
+}
+.sidebar-links li a {
+  display: flex;
+  align-items: center;
+  /* font-weight: 400; */
+  gap: 0 20px;
+  color: #fff;
+  font-weight: 500;
+  white-space: nowrap;
+  padding: 15px 10px;
+  text-decoration: none;
+  transition: 0.8s ease;
+}
+.sidebar-links li a:hover {
+  color: #fff;
+  background: #64ace2;
+  border-radius: 5px;
+}
+h4 > span {
+  color: #fada7a;
+}
+/* .user-account {
+  margin-top: auto;
+  padding: 12px 10px;
+  margin-left: -10px;
+}
+.user-profile {
+  display: flex;
+  align-items: center;
+  color: #161a2d;
+}
+.user-profile img {
+  width: 42px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+.user-profile h3 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+.user-profile span {
+  font-size: 0.775rem;
+  font-weight: 600;
+}
+.user-detail {
+  margin-left: 23px;
+  white-space: nowrap;
+}
+.sidebar:hover .user-account {
+  background: #fff;
+  border-radius: 4px;
+} */
+
+/* New code by Faisal */
+/* Hamburger Button */
+.sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  width: 35px;
+  height: 30px;
+  cursor: pointer;
+  z-index: 999;
+  /* background-color: #161a2d; */
+  padding: 4px;
+  border-radius: 6px;
+  transition: background-color 0.6s ease-in-out;
+  margin: 8px 0 0 0;
+}
+
+.sidebar-toggle .bar {
+  display: block;
+  width: 100%;
+  height: 3px;
+  background-color: #fff;
+  margin: 5px 0;
+  transition: all 0.6s ease-in-out;
+}
+
+.sidebar-toggle.active .bar {
+  background-color: #fff;
+}
+.sidebar-toggle.active .bar:nth-child(1) {
+  transform: translateY(8px) rotate(45deg);
+}
+
+.sidebar-toggle.active .bar:nth-child(2) {
+  opacity: 0;
+}
+
+.sidebar-toggle.active .bar:nth-child(3) {
+  transform: translateY(-8px) rotate(-45deg);
+}
+
+/*Responsive Styles */
+@media (max-width: 1024px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 260px;
+    display: flex;
+    overflow-x: hidden;
+    flex-direction: column;
+    background: #161a2d;
+    padding: 25px 20px;
+    transition: all 0.4s ease;
+  }
+  .sidebar-links h4 {
+    color: #fff;
+    font-weight: 500;
+    white-space: nowrap;
+    margin: 10px 0;
+    position: relative;
+  }
+  .sidebar-links h4 span {
+    opacity: 1;
+  }
+  .menu-separator {
+    opacity: 0;
+  }
+}
+@media (max-width: 1024px) {
+  .sidebar-header {
+    margin-left: 45px;
+  }
+  .sidebar-toggle {
+    display: block;
+  }
+
+  .sidebar {
+    left: -260px;
+    transition: all 0.6s ease-in-out;
+  }
+
+  .sidebar.active {
+    left: 0;
+    width: 260px;
+  }
+  .sidebar .sidebar-header h2,
+  .sidebar-links h4 span {
+    display: block;
+  }
+}
