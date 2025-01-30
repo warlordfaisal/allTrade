@@ -18,6 +18,13 @@ import Profile from "./components/pages/Profile";
 import Settings from "./components/pages/Settings";
 import Logout from "./components/pages/Logout";
 
+// Import from "./components/pages/Create
+import Broker from "./components/pages/CreateMenu/Broker";
+import Creditors from "./components/pages/CreateMenu/creditors";
+import Debtors from "./components/pages/CreateMenu/debtors";
+import Inventory from "./components/pages/CreateMenu/inventory";
+import Warehouse from "./components/pages/CreateMenu/warehouse";
+
 function App() {
   return (
     <BrowserRouter>
@@ -37,6 +44,11 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/logout" element={<Logout />} />
+          <Route path="/Broker" element={<Broker />} />
+          <Route path="/Creditors" element={<Creditors />} />
+          <Route path="/Debtors" element={<Debtors />} />
+          <Route path="/Inventory" element={<Inventory />} />
+          <Route path="/Warehouse" element={<Warehouse />} />
         </Routes>
       </Container>
     </BrowserRouter>

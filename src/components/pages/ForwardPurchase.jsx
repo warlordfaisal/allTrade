@@ -1,6 +1,6 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
-import { TextField, Box, Button, Typography } from "@mui/material";
+import { TextField, Grid, Box, Button, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 
 // Reusable Input Field Component
@@ -80,71 +80,97 @@ const ForwardPurchase = () => {
         display: "flex",
         flexDirection: "column",
         gap: 2,
-        width: 400,
+        width: 600,
         backgroundColor: "#161a2d",
         margin: "auto",
         padding: 2,
       }}
     >
       <Typography variant="h4" color="white" gutterBottom>
-      ForwardPurchase
+        Forward Purchase
       </Typography>
-      <CustomTextField
-        label="First Name"
-        placeholder="Enter your first name"
-        name="firstName"
-        value={formData.firstName}
-        onChange={handleChange}
-      />
-      <CustomTextField
-        label="Last Name"
-        placeholder="Enter your last name"
-        name="lastName"
-        value={formData.lastName}
-        onChange={handleChange}
-      />
-      <CustomTextField
-        label="Email Address"
-        placeholder="Enter your email"
-        name="email"
-        value={formData.email}
-        onChange={handleChange}
-      />
-      <CustomTextField
-        label="Phone Number"
-        placeholder="Enter your phone number"
-        name="phone"
-        value={formData.phone}
-        onChange={handleChange}
-      />
-      <CustomTextField
-        label="Address"
-        placeholder="Enter your address"
-        name="address"
-        value={formData.address}
-        onChange={handleChange}
-      />
-      <CustomTextField
-        label="City"
-        placeholder="Enter your city"
-        name="city"
-        value={formData.city}
-        onChange={handleChange}
-      />
-      <CustomTextField
-        label="State"
-        placeholder="Enter your state"
-        name="state"
-        value={formData.state}
-        onChange={handleChange}
-      />
-      <CustomTextField
-        label="Zip Code"
-        placeholder="Enter your zip code"
-        name="zip"
-        value={formData.zip}
-        onChange={handleChange}
-      />
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={6}>
+          <CustomTextField
+            label="First Name"
+            placeholder="Enter your first name"
+            name="firstName"
+            value={formData.firstName}
+            onChange={handleChange}
+            fullWidth
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <CustomTextField
+            label="Last Name"
+            placeholder="Enter your last name"
+            name="lastName"
+            value={formData.lastName}
+            onChange={handleChange}
+            fullWidth
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <CustomTextField
+            label="Email Address"
+            placeholder="Enter your email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            fullWidth
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <CustomTextField
+            label="Phone Number"
+            placeholder="Enter your phone number"
+            name="phone"
+            value={formData.phone}
+            onChange={handleChange}
+            fullWidth
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <CustomTextField
+            label="Address"
+            placeholder="Enter your address"
+            name="address"
+            value={formData.address}
+            onChange={handleChange}
+            fullWidth
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <CustomTextField
+            label="City"
+            placeholder="Enter your city"
+            name="city"
+            value={formData.city}
+            onChange={handleChange}
+            fullWidth
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <CustomTextField
+            label="State"
+            placeholder="Enter your state"
+            name="state"
+            value={formData.state}
+            onChange={handleChange}
+            fullWidth
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <CustomTextField
+            label="Zip Code"
+            placeholder="Enter your zip code"
+            name="zip"
+            value={formData.zip}
+            onChange={handleChange}
+            fullWidth
+          />
+        </Grid>
+      </Grid>
       <Button
         type="submit"
         variant="contained"
