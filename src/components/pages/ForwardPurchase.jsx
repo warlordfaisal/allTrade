@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { TextField, Grid, Box, Button, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 
 // Reusable Input Field Component
-const CustomTextField = ({ label, placeholder, value, onChange, ...props }) => {
+const CustomTextField = ({ label, placeholder, value, onChange, type, ...props }) => {
   const theme = useTheme();
   return (
     <TextField
@@ -13,6 +13,7 @@ const CustomTextField = ({ label, placeholder, value, onChange, ...props }) => {
       variant="outlined"
       value={value}
       onChange={onChange}
+      type={type}
       sx={{
         "& .MuiOutlinedInput-root": {
           color: "#fff", // Change input text color
@@ -44,10 +45,12 @@ CustomTextField.propTypes = {
   placeholder: PropTypes.string,
   value: PropTypes.string.isRequired,
   onChange: PropTypes.func.isRequired,
+  type: PropTypes.string,
 };
 
 const ForwardPurchase = () => {
   const [formData, setFormData] = useState({
+    date: "",
     firstName: "",
     lastName: "",
     email: "",
@@ -57,6 +60,16 @@ const ForwardPurchase = () => {
     state: "",
     zip: "",
   });
+
+  useEffect(() => {
+    // Set the default date to the current date in YYYY-MM-DD format (required for input type="date")
+    const today = new Date();
+    const formattedDate = today.toISOString().split('T')[0];
+    setFormData((prevData) => ({
+      ...prevData,
+      date: formattedDate,
+    }));
+  }, []);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -90,6 +103,16 @@ const ForwardPurchase = () => {
         Forward Purchase
       </Typography>
       <Grid container spacing={2}>
+        <Grid item xs={12} sm={6}>
+          <CustomTextField
+            label="Date"
+            type="date"
+            name="date"
+            value={formData.date}
+            onChange={handleChange}
+            fullWidth
+          />
+        </Grid>
         <Grid item xs={12} sm={6}>
           <CustomTextField
             label="First Name"
