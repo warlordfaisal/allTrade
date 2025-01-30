@@ -1,6 +1,3 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
 import "./App.css";
 import Navbar from "./components/navigation/navbar";
 import { Button, Typography, Container } from "@mui/material";
@@ -22,8 +19,6 @@ import Settings from "./components/pages/Settings";
 import Logout from "./components/pages/Logout";
 
 function App() {
-  const [count, setCount] = useState(0);
-
   return (
     <BrowserRouter>
       <Container>
@@ -43,22 +38,6 @@ function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/logout" element={<Logout />} />
         </Routes>
-      </Container>
-      <Container>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </Container>
-      <Typography>men at work</Typography>
-      <h2>Do Not Disturb</h2>
-      <h2>Do Not Touch</h2>
-      <Container className="card">
-        <Button  variant="contained" onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </Button>
       </Container>
     </BrowserRouter>
   );

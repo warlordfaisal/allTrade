@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, NavLink } from "react-router-dom"; // Import both Link and NavLink
 import "./navbar.css"; // Include the CSS file for styles
 import logo from "../../assets/AKlogo.svg"; // Adjust the path to your logo

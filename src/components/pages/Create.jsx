@@ -1,7 +1,160 @@
-import React from "react";
+import { useState } from "react";
+import PropTypes from "prop-types";
+import { TextField, Box, Button, Typography } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+
+// Reusable Input Field Component
+const CustomTextField = ({ label, placeholder, value, onChange, ...props }) => {
+  const theme = useTheme();
+  return (
+    <TextField
+      label={label}
+      placeholder={placeholder}
+      variant="outlined"
+      value={value}
+      onChange={onChange}
+      sx={{
+        "& .MuiOutlinedInput-root": {
+          color: "#fff", // Change input text color
+          "&:hover .MuiOutlinedInput-notchedOutline": {
+            borderColor: "#F14A00", // Change border color on hover
+          },
+          "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+            borderColor: "#FFD65A", // Change border color when focused
+          },
+        },
+        "& .MuiOutlinedInput-notchedOutline": {
+          borderColor: theme.palette.primary.main, // Default border color
+        },
+        "& .MuiInputBase-input::placeholder": {
+          color: "#fff", // Change placeholder text color
+        },
+        "& .MuiFormLabel-root": {
+          color: "#fff", // Change label color
+        },
+      }}
+      {...props}
+    />
+  );
+};
+
+// Define prop types for CustomTextField
+CustomTextField.propTypes = {
+  label: PropTypes.string.isRequired,
+  placeholder: PropTypes.string,
+  value: PropTypes.string.isRequired,
+  onChange: PropTypes.func.isRequired,
+};
 
 const Create = () => {
-  return <h1>Create</h1>;
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    address: "",
+    city: "",
+    state: "",
+    zip: "",
+  });
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    // Handle form submission logic here
+    console.log("Form submitted", formData);
+  };
+
+  return (
+    <Box
+      component="form"
+      onSubmit={handleSubmit}
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 2,
+        width: 400,
+        backgroundColor: "#161a2d",
+        margin: "auto",
+        padding: 2,
+      }}
+    >
+      <Typography variant="h4" color="white" gutterBottom>
+        Form
+      </Typography>
+      <CustomTextField
+        label="First Name"
+        placeholder="Enter your first name"
+        name="firstName"
+        value={formData.firstName}
+        onChange={handleChange}
+      />
+      <CustomTextField
+        label="Last Name"
+        placeholder="Enter your last name"
+        name="lastName"
+        value={formData.lastName}
+        onChange={handleChange}
+      />
+      <CustomTextField
+        label="Email Address"
+        placeholder="Enter your email"
+        name="email"
+        value={formData.email}
+        onChange={handleChange}
+      />
+      <CustomTextField
+        label="Phone Number"
+        placeholder="Enter your phone number"
+        name="phone"
+        value={formData.phone}
+        onChange={handleChange}
+      />
+      <CustomTextField
+        label="Address"
+        placeholder="Enter your address"
+        name="address"
+        value={formData.address}
+        onChange={handleChange}
+      />
+      <CustomTextField
+        label="City"
+        placeholder="Enter your city"
+        name="city"
+        value={formData.city}
+        onChange={handleChange}
+      />
+      <CustomTextField
+        label="State"
+        placeholder="Enter your state"
+        name="state"
+        value={formData.state}
+        onChange={handleChange}
+      />
+      <CustomTextField
+        label="Zip Code"
+        placeholder="Enter your zip code"
+        name="zip"
+        value={formData.zip}
+        onChange={handleChange}
+      />
+      <Button
+        type="submit"
+        variant="contained"
+        color="primary"
+        sx={{ height: 45 }}
+      >
+        Submit
+      </Button>
+    </Box>
+  );
 };
 
 export default Create;
