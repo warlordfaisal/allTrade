@@ -1,5 +1,11 @@
-import { app, BrowserWindow } from 'electron';
-import path from 'path';
+import { app, BrowserWindow } from "electron";
+import path from "path";
+import { exec } from "child_process";
+import { fileURLToPath } from "url";
+
+// Define __dirname and __filename for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
@@ -11,18 +17,35 @@ function createWindow() {
     },
   });
 
-  mainWindow.loadURL('http://localhost:5173'); // Load Vite app
+  mainWindow.loadURL("http://localhost:5173"); // Load Vite app
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  // Start the Node.js server
+  const server = exec("node server.js", { cwd: __dirname });
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+  server.stdout.on("data", (data) => {
+    console.log(`Server: ${data}`);
+  });
+
+  server.stderr.on("data", (data) => {
+    console.error(`Server Error: ${data}`);
+  });
+
+  server.on("close", (code) => {
+    console.log(`Server process exited with code ${code}`);
+  });
+
+  createWindow();
+});
+
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") {
     app.quit();
   }
 });
 
-app.on('activate', () => {
+app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
