@@ -3,7 +3,7 @@ import Navbar from "./components/navigation/navbar";
 import { Button, Typography, Container } from "@mui/material";
 import { BrowserRouter, Routes, Route } from "react-router-dom"; // Import BrowserRouter
 
-// Import your page components
+// Import your Navigation page components
 import Dashboard from "./components/pages/Dashboard";
 import Purchase from "./components/pages/Purchase";
 import Sales from "./components/pages/Sales";
@@ -24,6 +24,14 @@ import Creditors from "./components/pages/CreateMenu/creditors";
 import Debtors from "./components/pages/CreateMenu/debtors";
 import Inventory from "./components/pages/CreateMenu/inventory";
 import Warehouse from "./components/pages/CreateMenu/warehouse";
+
+// Import from "./components/pages/Reports
+import Stock from "./components/pages/Reports/stock";
+import DObook from "./components/pages/Reports/DObook";
+import PurchaseReg from "./components/pages/Reports/PurchaseReg";
+import Outstanding from "./components/pages/Reports/Outstanding";
+import ForwardPur from "./components/pages/Reports/ForwardPur";
+import Forwardsale from "./components/pages/Reports/Forwardsale";
 
 function App() {
   return (
@@ -49,6 +57,12 @@ function App() {
           <Route path="/Debtors" element={<Debtors />} />
           <Route path="/Inventory" element={<Inventory />} />
           <Route path="/Warehouse" element={<Warehouse />} />
+          <Route path="/Stock" element={<Stock />} />
+          <Route path="/DObook" element={<DObook />} />
+          <Route path="/PurchaseReg" element={<PurchaseReg />} />
+          <Route path="/Outstanding" element={<Outstanding />} />
+          <Route path="/ForwardPur" element={<ForwardPur />} />
+          <Route path="/Forwardsale" element={<Forwardsale />} />
         </Routes>
       </Container>
     </BrowserRouter>
