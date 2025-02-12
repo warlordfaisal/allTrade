@@ -177,7 +177,7 @@ const Navbar = () => {
         </li>
         <li className="phone">
           <NavLink
-            to="/logout"
+            to="/Welcome"
             className={({ isActive }) => (isActive ? "active-link" : "")}
           >
             <span className="material-symbols-outlined">logout</span>

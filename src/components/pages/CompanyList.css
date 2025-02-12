@@ -1,0 +1,49 @@
+body {
+  background-color: #f0f2f5;
+  font-family: Arial, sans-serif;
+}
+
+.company-list-container {
+  background-color: #161a2d;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 50px auto;
+  max-width: 400px;
+  padding: 20px;
+  text-align: center;
+  height: 50vh;
+}
+
+.company-list-container h1 {
+  color: #fff;
+  margin-bottom: 30px;
+  font-size: 36px;
+}
+
+.company-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.company-list-item {
+  background-color: #0b539b;
+  border-radius: 4px;
+  cursor: pointer;
+  margin: 10px 0;
+  padding: 10px;
+  transition: background-color 0.3s ease;
+}
+
+.company-list-item:hover {
+  background-color: #126ac2;
+}
+
+.company-list-item:active {
+  background-color: #bbb;
+}
+
+.no-companies {
+  color: #777;
+  font-style: italic;
+  margin-top: 20px;
+}
