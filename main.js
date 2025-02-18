@@ -78,11 +78,17 @@ async function startServer() {
   console.log("Checking if port 3000 is in use...");
 
   try {
-    // Kill any process already using port 3000
-    execSync("npx kill-port 3000", { stdio: "ignore" });
+    let killCommand;
+    if (process.platform === "win32") {
+      killCommand = `for /f "tokens=5" %%a in ('netstat -ano ^| findstr :3000') do taskkill /f /pid %%a`;
+    } else {
+      killCommand = `kill -9 $(lsof -ti:3000)`; // For Linux/macOS
+    }
+
+    execSync(killCommand, { stdio: "ignore" });
     console.log("✅ Port 3000 cleared.");
   } catch (error) {
-    console.error("⚠️ Failed to free port 3000:", error.message);
+    console.error("⚠️ Failed to free port 3000:", error.message); // Keep this error log
   }
 
   console.log("🚀 Starting server...");
