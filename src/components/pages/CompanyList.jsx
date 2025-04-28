@@ -55,7 +55,9 @@ function CompanyList({ onCompanySelect }) {
       await axios.post("http://localhost:3000/api/switch-database", {
         companyId: company.id,
       });
-      console.log(`Switched to Company Name ${company.name} & ID ${company.id} database`);
+      console.log(
+        `Switched to Company Name ${company.name} & ID ${company.id} database`
+      );
       onCompanySelect(company);
     } catch (error) {
       console.error(`Error switching to ${company.name} database:`, error);
@@ -132,6 +134,7 @@ function CompanyList({ onCompanySelect }) {
               component="button"
               key={company.id || `company-${index}`}
               onClick={() => handleSelect(company)}
+              style={{ marginBottom: "8px" }}
             >
               <ListItemText primary={company.name} />
             </ListItem>

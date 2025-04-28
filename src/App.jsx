@@ -1,7 +1,7 @@
 import "./App.css";
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import { CircularProgress, Container } from "@mui/material";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation  } from "react-router-dom";
 import Navbar from "./components/navigation/Navbar";
 import routes from "./routes";
 import CompanyList from "./components/pages/CompanyList";

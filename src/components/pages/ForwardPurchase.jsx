@@ -2,8 +2,11 @@ import React, { useState } from "react";
 import CustomForm from "./CustomForm";
 
 const ForwardPurchaseForm = () => {
+  const today = new Date();
+  const formattedToday = today.toISOString().split("T")[0]; // YYYY-MM-DD format
+
   const [formData, setFormData] = useState({
-    date: "",
+    date: formattedToday,
     firstName: "",
     lastName: "",
     email: "",

@@ -14,6 +14,20 @@ const Navbar = () => {
 
   // Close Sidebar when clicking outside
   useEffect(() => {
+    const sidebar = sidebarRef.current;
+    const handleFocusIn = () => {
+      sidebar.classList.add("keyboard-focus");
+    };
+    const handleFocusOut = () => {
+      setTimeout(() => {
+        if (!sidebar.contains(document.activeElement)) {
+          sidebar.classList.remove("keyboard-focus");
+        }
+      }, 10);
+    };
+    sidebar.addEventListener("focusin", handleFocusIn);
+    sidebar.addEventListener("focusout", handleFocusOut);
+
     const handleClickOutside = (event) => {
       if (
         sidebarRef.current &&
@@ -25,6 +39,8 @@ const Navbar = () => {
     };
     document.addEventListener("click", handleClickOutside);
     return () => {
+      sidebar.removeEventListener("focusin", handleFocusIn);
+      sidebar.removeEventListener("focusout", handleFocusOut);
       document.removeEventListener("click", handleClickOutside);
     };
   }, []);
@@ -57,7 +73,7 @@ const Navbar = () => {
           <span>Main Menu</span>
           <div className="menu-separator"></div>
         </h4>
-        <li className="phone">
+        <li className="phone active-link">
           <NavLink
             to="/"
             className={({ isActive }) => (isActive ? "active-link" : "")}

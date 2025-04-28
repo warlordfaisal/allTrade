@@ -2,10 +2,16 @@ import "dotenv/config";
 import express from "express";
 import pkg from "pg";
 import { PrismaClient } from "@prisma/client";
-import process from "process"; // Import the process object
+import process from "process";
+import crypto from "crypto";
+import { exec } from "child_process";
+import { promisify } from "util";
 
+const execAsync = promisify(exec);
 const router = express.Router();
 const { Pool } = pkg;
+
+// ----------------------------- CONFIGURATION -----------------------------
 
 // Default Superuser Database Connection
 const defaultPool = new Pool({
@@ -16,20 +22,45 @@ const defaultPool = new Pool({
   port: process.env.SUPERUSER_DB_PORT || 5432,
 });
 
-let prisma; // Declare prisma at the top level
+let prisma; // Single Prisma client instance
+let companyDbPool = null; // Single company database pool
 
+// ----------------------------- UTILITY FUNCTIONS -----------------------------
+
+/**
+ * Generates a secure random password.
+ * @param {number} length - Length of the password in bytes (default: 16).
+ * @returns {string} Hex-encoded password.
+ */
+function generateSecurePassword(length = 16) {
+  return crypto.randomBytes(length).toString("hex");
+}
+
+/**
+ * Sanitizes a name to be safe for database/user names.
+ * @param {string} name - Input name.
+ * @returns {string} Sanitized name (lowercase, alphanumeric, underscores).
+ */
+function sanitizeDbName(name) {
+  return name.toLowerCase().replace(/[^a-z0-9_]/g, "");
+}
+
+/**
+ * Initializes Prisma client for a specific database.
+ * @param {string} dbUser - Database user.
+ * @param {string} dbPassword - Database password.
+ * @param {string} dbName - Database name.
+ */
 async function initializePrisma(dbUser, dbPassword, dbName) {
   console.log(`Initializing Prisma for ${dbName} with user ${dbUser}`);
   const connectionUrl = `postgresql://${dbUser}:${dbPassword}@${
     process.env.SUPERUSER_DB_HOST
   }:${process.env.SUPERUSER_DB_PORT || 5432}/${dbName}`;
-  console.log(`Connection URL: ${connectionUrl}`);
 
   try {
     if (prisma) {
       console.log("Disconnecting existing Prisma client...");
       await prisma.$disconnect();
-      console.log("Existing Prisma client disconnected.");
     }
 
     prisma = new PrismaClient({
@@ -39,16 +70,19 @@ async function initializePrisma(dbUser, dbPassword, dbName) {
         },
       },
     });
-    console.log("Creating new Prisma client...");
     await prisma.$connect();
     console.log("Prisma client connected successfully");
   } catch (error) {
     console.error("Error initializing Prisma:", error);
-    throw error; // Re-throw the error
+    throw error;
   }
 }
 
-// Ensure Default Tables Exist
+// ----------------------------- DATABASE SETUP -----------------------------
+
+/**
+ * Ensures the default `companies` table exists in the default database.
+ */
 async function createDefaultTables() {
   try {
     await defaultPool.query(`
@@ -75,7 +109,13 @@ async function createDefaultTables() {
 }
 createDefaultTables();
 
-// Function to Create a New Company Database
+// ----------------------------- COMPANY MANAGEMENT -----------------------------
+
+/**
+ * Creates a new company database, user, and initial data.
+ * @param {Object} companyData - Company details (companyName, gst, etc.).
+ * @returns {Object} Connection details (dbName, dbUser, dbPassword).
+ */
 async function createCompanyDatabase(companyData) {
   const {
     companyName,
@@ -87,57 +127,66 @@ async function createCompanyDatabase(companyData) {
     pinCode,
     state,
   } = companyData;
-  const dbName = `company_${companyName.toLowerCase().replace(/\s+/g, "_")}`;
-  const dbUser = `user_${companyName.toLowerCase().replace(/\s+/g, "_")}`;
-  const dbPassword = `password_${companyName}`;
+  const dbName = sanitizeDbName(`company_${companyName}`);
+  const dbUser = sanitizeDbName(`user_${companyName}`);
+  const dbPassword = generateSecurePassword();
 
+  let client;
   try {
-    const client = await defaultPool.connect();
-    try {
-      await client.query(`CREATE DATABASE ${dbName}`);
-      console.log(`✅ Database ${dbName} created.`);
-    } finally {
-      client.release();
-    }
+    // Create database
+    client = await defaultPool.connect();
+    await client.query(`CREATE DATABASE ${dbName}`);
+    console.log(`✅ Database ${dbName} created.`);
 
-    const companyPool = new Pool({
-      user: process.env.SUPERUSER_DB_USER,
-      host: process.env.SUPERUSER_DB_HOST,
-      database: dbName,
-      password: process.env.SUPERUSER_DB_PASSWORD,
-      port: process.env.SUPERUSER_DB_PORT || 5432,
+    // Run Prisma migrations
+    const dynamicDatabaseUrl = `postgresql://${process.env.SUPERUSER_DB_USER}:${
+      process.env.SUPERUSER_DB_PASSWORD
+    }@${process.env.SUPERUSER_DB_HOST}:${
+      process.env.SUPERUSER_DB_PORT || 5432
+    }/${dbName}?schema=public`;
+
+    const migrateCommand = "npx prisma migrate deploy --name initial";
+    const env = { ...process.env, DATABASE_URL: dynamicDatabaseUrl };
+
+    console.log("Running Prisma Migrate:", migrateCommand);
+    const { stdout, stderr } = await execAsync(migrateCommand, {
+      cwd: process.cwd(),
+      env,
     });
 
-    await companyPool.query(`
-      CREATE TABLE IF NOT EXISTS company_info (
-        id SERIAL PRIMARY KEY,
-        name TEXT NOT NULL,
-        gst TEXT NOT NULL,
-        address TEXT NOT NULL,
-        contact TEXT NOT NULL,
-        contact_person TEXT NOT NULL,
-        city TEXT NOT NULL,
-        pin_code TEXT NOT NULL,
-        state TEXT NOT NULL
-      );
-    `);
-    console.log(`✅ Table 'company_info' created in ${dbName}.`);
+    console.log("Prisma Migrate stdout:", stdout);
+    if (stderr) {
+      console.error("Prisma Migrate stderr:", stderr);
+      throw new Error(`Prisma Migrate failed: ${stderr}`);
+    }
+    console.log("✅ Prisma Migrate completed successfully");
 
-    await companyPool.query(
-      `INSERT INTO company_info (name, gst, address, contact, contact_person, city, pin_code, state)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [
-        companyName,
-        gst,
-        companyAddress,
-        contact,
-        contactPerson,
-        city,
-        pinCode,
-        state,
-      ]
-    );
+    // Insert initial company info
+    const companyPrisma = new PrismaClient({
+      datasources: {
+        db: { url: dynamicDatabaseUrl },
+      },
+    });
+    try {
+      await companyPrisma.$connect();
+      await companyPrisma.companyInfo.create({
+        data: {
+          name: companyName,
+          gst,
+          address: companyAddress,
+          contact,
+          contactPerson,
+          city,
+          pinCode,
+          state,
+        },
+      });
+      console.log(`✅ Initial data inserted into 'company_info' in ${dbName}.`);
+    } finally {
+      await companyPrisma.$disconnect();
+    }
 
+    // Create database user and grant privileges
     const checkUserExists = await defaultPool.query(
       `SELECT 1 FROM pg_roles WHERE rolname = $1`,
       [dbUser]
@@ -147,13 +196,14 @@ async function createCompanyDatabase(companyData) {
         `CREATE USER ${dbUser} WITH ENCRYPTED PASSWORD '${dbPassword}'`
       );
     }
-
     await defaultPool.query(
       `GRANT ALL PRIVILEGES ON DATABASE ${dbName} TO ${dbUser}`
     );
+
+    // Store company details in default database
     await defaultPool.query(
       `INSERT INTO companies (name, database_name, db_user, db_password, gst, company_address, contact, contact_person, city, pin_code, state)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
       [
         companyName,
         dbName,
@@ -168,14 +218,80 @@ async function createCompanyDatabase(companyData) {
         state,
       ]
     );
+
     return { dbName, dbUser, dbPassword };
   } catch (error) {
     console.error("❌ Error creating company database:", error);
+    if (client) {
+      await client.query(`DROP DATABASE IF EXISTS ${dbName}`);
+    }
     throw error;
+  } finally {
+    if (client) client.release();
   }
 }
 
-// API Route to Create a New Company
+/**
+ * Switches to a company's database and initializes Prisma.
+ * @param {number} companyId - ID of the company.
+ * @returns {Object} Response with status and connection details.
+ */
+async function switchDatabase(companyId) {
+  try {
+    const result = await defaultPool.query(
+      "SELECT * FROM companies WHERE id = $1",
+      [companyId]
+    );
+    if (result.rows.length === 0) {
+      return { status: 404, message: "❌ Company not found" };
+    }
+
+    const company = result.rows[0];
+
+    // Close existing company pool if it exists
+    if (companyDbPool) {
+      console.log("Closing existing companyDbPool...");
+      await companyDbPool.end();
+      companyDbPool = null;
+    }
+
+    // Create new connection pool
+    companyDbPool = new Pool({
+      user: process.env.SUPERUSER_DB_USER,
+      host: process.env.SUPERUSER_DB_HOST,
+      database: company.database_name,
+      password: company.db_password,
+      port: process.env.SUPERUSER_DB_PORT || 5432,
+    });
+
+    // Test connection
+    const testClient = await companyDbPool.connect();
+    try {
+      console.log(`✅ Successfully connected to ${company.database_name}`);
+    } finally {
+      testClient.release();
+    }
+
+    return {
+      status: 200,
+      message: `✅ Switched to ${company.name}`,
+      connectionDetails: {
+        database: company.database_name,
+        user: process.env.SUPERUSER_DB_USER,
+      },
+      companyId: company.id,
+    };
+  } catch (error) {
+    console.error("❌ Error switching database:", error);
+    return {
+      status: 500,
+      message: "❌ Error switching database",
+      error: error.message,
+    };
+  }
+}
+
+// Company APIs
 router.post("/create-company", async (req, res) => {
   const { companyName } = req.body;
   if (!companyName) {
@@ -196,142 +312,46 @@ router.post("/create-company", async (req, res) => {
   }
 });
 
-// API Route to Fetch Companies
 router.get("/companies", async (req, res) => {
   try {
     const result = await defaultPool.query("SELECT id, name FROM companies");
     res.status(200).json(result.rows);
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "❌ Error fetching companies", error: error.message });
+    res.status(500).json({
+      message: "❌ Error fetching companies",
+      error: error.message,
+    });
   }
 });
 
-// API Route to Switch Database
-let companyDbPool = null;
-
-async function switchDatabase(companyId) {
-  try {
-    console.log(`🔍 Checking company with ID: ${companyId}`);
-
-    const result = await defaultPool.query(
-      "SELECT * FROM companies WHERE id = $1",
-      [companyId]
-    );
-
-    if (result.rows.length === 0) {
-      console.log(`❌ Company ID ${companyId} not found in database.`);
-      return { status: 404, message: "❌ Company not found" };
-    }
-
-    const company = result.rows[0];
-    console.log(`✅ Found Company:`, company);
-
-    // Close existing connection if exists (Important!)
-    if (companyDbPool) {
-      console.log("Closing existing companyDbPool...");
-      await companyDbPool.end(); // Wait for the pool to close
-      console.log("Existing companyDbPool closed.");
-    }
-
-    console.log(
-      `Attempting to create new pool for ${company.database_name} with user ${company.db_user}`
-    );
-
-    companyDbPool = new Pool({
-      user: process.env.SUPERUSER_DB_USER,
-      host: process.env.SUPERUSER_DB_HOST,
-      database: company.database_name,
-      password: company.db_password,
-      port: process.env.SUPERUSER_DB_PORT || 5432,
-    });
-
-    // Test the connection immediately after creating the pool (CRITICAL)
-    try {
-      const testClient = await companyDbPool.connect();
-      console.log(`✅ Successfully connected to ${company.database_name}!`);
-      testClient.release(); // Release the test client back to the pool
-    } catch (testError) {
-      console.error(
-        `❌ Error testing connection to ${company.database_name}:`,
-        testError
-      );
-      return {
-        status: 500,
-        message: `❌ Error connecting to database ${company.database_name}`,
-        error: testError.message, // Include the specific error
-      };
-    }
-
-    return {
-      status: 200,
-      message: `✅ Switched to ${company.name}`,
-      connectionDetails: {
-        database: company.database_name,
-        user: process.env.SUPERUSER_DB_USER,
-      },
-      companyId: company.id,
-    };
-  } catch (error) {
-    console.error("❌ Error in switchDatabase function:", error);
-    return {
-      status: 500,
-      message: "❌ Error switching database",
-      error: error.message,
-    };
-  }
-}
-
 router.post("/switch-database", async (req, res) => {
-  console.log("📩 Received request on /switch-database");
-  console.log("📩 Request Body:", req.body);
-
   const { companyId } = req.body;
-
   if (!companyId) {
-    console.log("❌ Missing companyId in request.");
     return res.status(400).json({ message: "Company ID is required" });
   }
 
   try {
     const response = await switchDatabase(companyId);
-
     if (response.status === 200) {
-      try {
-        const companyDetails = await defaultPool.query(
-          "SELECT * FROM companies WHERE id = $1",
-          [companyId]
-        );
-        const company = companyDetails.rows[0];
-
-        console.log("About to initialize Prisma...");
-        await initializePrisma(
-          response.connectionDetails.user,
-          company.db_password,
-          response.connectionDetails.database
-        );
-        console.log("Prisma initialized.");
-
-        return res.status(200).json(response); // Send the successful response
-      } catch (prismaError) {
-        console.error(
-          "❌ Error initializing Prisma in /switch-database:",
-          prismaError
-        );
-        return res.status(500).json({
-          message: "❌ Error initializing Prisma",
-          error: prismaError.message,
-        });
-      }
+      const companyDetails = await defaultPool.query(
+        "SELECT * FROM companies WHERE id = $1",
+        [companyId]
+      );
+      const company = companyDetails.rows[0];
+      await initializePrisma(
+        response.connectionDetails.user,
+        company.db_password,
+        response.connectionDetails.database
+      );
+      res.status(200).json(response);
     } else {
-      return res
-        .status(response.status)
-        .json({ message: response.message, error: response.error });
+      res.status(response.status).json({
+        message: response.message,
+        error: response.error,
+      });
     }
   } catch (error) {
-    console.error("❌ Error in /switch-database:", error);
-    return res.status(500).json({
+    res.status(500).json({
       message: "❌ Error switching database",
       error: error.message,
     });
@@ -342,8 +362,7 @@ router.get("/get-company-info", async (req, res) => {
   try {
     if (!prisma) {
       return res.status(500).json({
-        message:
-          "❌ Database connection not initialized. Please switch company first",
+        message: "❌ Database connection not initialized. Please switch company first",
       });
     }
 
@@ -357,14 +376,12 @@ router.get("/get-company-info", async (req, res) => {
 
     if (companyInfo.length === 0) {
       return res.status(404).json({
-        message:
-          "❌ No company info found (even after successful Prisma initialization)",
+        message: "❌ No company info found",
       });
     }
 
     res.status(200).json({ status: "✅ Success", data: companyInfo });
   } catch (error) {
-    console.error("❌ Error in /get-company-info:", error);
     res.status(500).json({
       message: "❌ Error fetching company info",
       error: error.message,
@@ -372,34 +389,262 @@ router.get("/get-company-info", async (req, res) => {
   }
 });
 
-// router.get("/get-company-info", async (req, res) => {
-//   console.log("Prisma in /get-company-info:", prisma);
+// ----------------------------- BROKER MANAGEMENT -----------------------------
 
-//   try {
-//     if (!prisma) {
-//       return res
-//         .status(500)
-//         .json({ message: "Prisma not initialized. Switch company first." });
-//     }
+router.post("/broker", async (req, res) => {
+  try {
+    if (!prisma) {
+      return res.status(500).json({
+        message: "❌ Database connection not initialized. Please switch company first",
+      });
+    }
 
-//     const companyInfo = await prisma.company_info.findMany();
+    const { brokerName, phone, bank, bankAccount, ifsc } = req.body;
+    if (!brokerName || !phone) {
+      return res.status(400).json({
+        message: "❌ Broker name and phone are required",
+      });
+    }
 
-//     console.log("Company Info from database:", companyInfo); // This is the crucial log!
+    const newBroker = await prisma.broker.create({
+      data: {
+        brokerName,
+        phone,
+        bank: bank || null,
+        bankAccount: bankAccount || null,
+        ifsc: ifsc || null,
+      },
+    });
 
-//     if (companyInfo.length === 0) {
-//       return res.status(404).json({ message: "No company info found" });
-//     }
+    res.status(201).json({
+      message: "✅ Broker created successfully",
+      data: newBroker,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "❌ Error creating broker",
+      error: error.message,
+    });
+  }
+});
 
-//     res.json({
-//       message: "Company info fetched successfully",
-//       data: companyInfo,
-//     });
-//   } catch (error) {
-//     console.error("Error in /get-company-info:", error);
-//     res
-//       .status(500)
-//       .json({ message: "Error fetching company info", error: error.message });
-//   }
-// });
+router.get("/brokers", async (req, res) => {
+  try {
+    if (!prisma) {
+      return res.status(500).json({
+        message: "❌ Database connection not initialized. Please switch company first",
+      });
+    }
+
+    const brokers = await prisma.broker.findMany();
+    res.status(200).json({
+      message: "✅ Brokers fetched successfully",
+      data: brokers,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "❌ Error fetching brokers",
+      error: error.message,
+    });
+  }
+});
+
+router.put("/broker/:id", async (req, res) => {
+  try {
+    if (!prisma) {
+      return res.status(500).json({
+        message: "❌ Database connection not initialized. Please switch company first",
+      });
+    }
+
+    const brokerId = Number(req.params.id);
+    if (isNaN(brokerId)) {
+      return res.status(400).json({ message: "❌ Invalid broker ID" });
+    }
+
+    const { brokerName, phone, bank, bankAccount, ifsc } = req.body;
+    if (!brokerName || !phone) {
+      return res.status(400).json({
+        message: "❌ Broker name and phone are required",
+      });
+    }
+
+    const existingBroker = await prisma.broker.findUnique({
+      where: { id: brokerId },
+    });
+    if (!existingBroker) {
+      return res.status(404).json({ message: "❌ Broker not found" });
+    }
+
+    const updatedBroker = await prisma.broker.update({
+      where: { id: brokerId },
+      data: {
+        brokerName,
+        phone,
+        bank: bank || null,
+        bankAccount: bankAccount || null,
+        ifsc: ifsc || null,
+      },
+    });
+
+    res.status(200).json({
+      message: "✅ Broker updated successfully",
+      data: updatedBroker,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "❌ Error updating broker",
+      error: error.message,
+    });
+  }
+});
+
+router.delete("/broker/:id", async (req, res) => {
+  try {
+    if (!prisma) {
+      return res.status(500).json({
+        message: "❌ Database connection not initialized. Please switch company first",
+      });
+    }
+
+    const brokerId = Number(req.params.id);
+    if (isNaN(brokerId)) {
+      return res.status(400).json({ message: "❌ Invalid broker ID" });
+    }
+
+    const existingBroker = await prisma.broker.findUnique({
+      where: { id: brokerId },
+    });
+    if (!existingBroker) {
+      return res.status(404).json({ message: "❌ Broker not found" });
+    }
+
+    await prisma.broker.delete({
+      where: { id: brokerId },
+    });
+
+    res.status(200).json({
+      message: "✅ Broker deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "❌ Error deleting broker",
+      error: error.message,
+    });
+  }
+});
+
+// ----------------------------- WAREHOUSE MANAGEMENT -----------------------------
+
+router.get("/warehouses", async (req, res) => {
+  try {
+    if (!prisma) {
+      return res.status(500).json({
+        message: "❌ Database connection not initialized. Please switch company first",
+      });
+    }
+
+    const warehouses = await prisma.warehouse.findMany();
+    res.json({ success: true, data: warehouses });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "❌ Failed to fetch warehouses",
+      error: error.message,
+    });
+  }
+});
+
+router.post("/warehouse", async (req, res) => {
+  try {
+    if (!prisma) {
+      return res.status(500).json({
+        message: "❌ Database connection not initialized. Please switch company first",
+      });
+    }
+
+    const { warehouseName, address, contactPerson, contactNum } = req.body;
+    if (!warehouseName) {
+      return res.status(400).json({
+        message: "❌ Warehouse name is required",
+      });
+    }
+
+    const newWarehouse = await prisma.warehouse.create({
+      data: {
+        warehouseName,
+        address,
+        contactPerson,
+        contactNum,
+      },
+    });
+    res.status(201).json({ success: true, data: newWarehouse });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "❌ Failed to create warehouse",
+      error: error.message,
+    });
+  }
+});
+
+router.put("/warehouse/:id", async (req, res) => {
+  try {
+    if (!prisma) {
+      return res.status(500).json({
+        message: "❌ Database connection not initialized. Please switch company first",
+      });
+    }
+
+    const { id } = req.params;
+   
+
+    const { warehouseName, address, contactPerson, contactNum } = req.body;
+    if (!warehouseName) {
+      return res.status(400).json({
+        message: "❌ Warehouse name is required",
+      });
+    }
+
+    const updated = await prisma.warehouse.update({
+      where: { id: parseInt(id) },
+      data: {
+        warehouseName,
+        address,
+        contactPerson,
+        contactNum,
+      },
+    });
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "❌ Failed to update warehouse",
+      error: error.message,
+    });
+  }
+});
+
+router.delete("/warehouse/:id", async (req, res) => {
+  try {
+    if (!prisma) {
+      return res.status(500).json({
+        message: "❌ Database connection not initialized. Please switch company first",
+      });
+    }
+
+    const { id } = req.params;
+    await prisma.warehouse.delete({
+      where: { id: parseInt(id) },
+    });
+    res.json({ success: true, message: "✅ Warehouse deleted successfully" });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "❌ Failed to delete warehouse",
+      error: error.message,
+    });
+  }
+});
 
 export default router;

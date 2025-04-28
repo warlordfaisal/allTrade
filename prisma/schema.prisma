@@ -8,13 +8,45 @@ datasource db {
 }
 
 model company_info {
-  id           Int     @id @default(autoincrement())
-  name         String
-  gst          String
-  address      String
-  contact      String
+  id             Int    @id @default(autoincrement())
+  name           String
+  gst            String
+  address        String
+  contact        String
   contact_person String
-  city         String
-  pin_code     String
-  state        String
+  city           String
+  pin_code       String
+  state          String
 }
+
+model Broker {
+  id           Int      @id @default(autoincrement())
+  brokerName   String   @map("broker_name")
+  phone        String
+  bank         String?
+  bankAccount  String?  @map("bank_account")
+  ifsc         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Warehouse {
+  id            Int      @id @default(autoincrement())
+  warehouseName String   @map("warehouse_name")
+  address       String
+  contactPerson String   @map("contact_person")
+  contactNum    String   @map("contact_num")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Group {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  parentId    Int?     // For sub-groups (e.g., Direct Expenses under Expenses)
+  parent      Group?   @relation("GroupParent", fields: [parentId], references: [id])
+  children    Group[]  @relation("GroupParent")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+

@@ -3,32 +3,96 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import router from "./routes/index.js";
-import cors from "cors"; // Import the cors middleware
+import cors from "cors";
+import process from "process";
+import { execSync } from "child_process";
+import fs from "fs";
 
 const app = express();
 
-// Define __filename and __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const port = process.env.PORT || 3000; // Use environment variable for port
+const port = process.env.PORT || 3000;
 
-// CORS configuration (Crucial!)
 const corsOptions = {
-  origin: "http://localhost:5173", // Allow requests from your React app's origin
-  methods: "GET,POST,PUT,DELETE", // Specify allowed HTTP methods (important!)
-  credentials: true, // If you need to send cookies or authentication headers (often needed)
+  origin: "http://localhost:5173",
+  methods: "GET,POST,PUT,DELETE",
+  credentials: true,
 };
+
+const postgresPath = path.join(__dirname, "postgresql", "bin", "pg_ctl");
+const initdbPath = path.join(__dirname, "postgresql", "bin", "initdb");
+const dataPath = path.join(__dirname, "postgresql", "data");
+const logFilePath = path.join(
+  __dirname,
+  "postgresql",
+  "logs",
+  "postgresql.log"
+);
+
+function isDatabaseInitialized() {
+  return fs.existsSync(path.join(dataPath, "PG_VERSION"));
+}
+
+function isPostgresRunning() {
+  try {
+    execSync(`"${postgresPath}" status -D "${dataPath}"`, { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function initializeDatabase() {
+  if (!isDatabaseInitialized()) {
+    console.log("Initializing PostgreSQL database...");
+    try {
+      execSync(`"${initdbPath}" -D "${dataPath}"`, { stdio: "inherit" });
+      console.log("Database initialized successfully.");
+    } catch (error) {
+      console.error("Failed to initialize PostgreSQL database:", error);
+      throw error;
+    }
+  } else {
+    console.log("Database already initialized.");
+  }
+
+  if (!isPostgresRunning()) {
+    console.log("Starting PostgreSQL...");
+    try {
+      execSync(`"${postgresPath}" start -D "${dataPath}" -l "${logFilePath}"`, {
+        stdio: "inherit",
+      });
+      console.log("PostgreSQL started successfully.");
+    } catch (error) {
+      console.error("Failed to start PostgreSQL:", error);
+      throw error;
+    }
+  } else {
+    console.log("PostgreSQL is already running.");
+  }
+}
 
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use("/api", router);
 
-app.listen(port, () => {
+const server = app.listen(port, '0.0.0.0', () => {
   console.log(`Server running at http://localhost:${port}`);
 });
 
-// Graceful shutdown
+async function startServer() {
+  try {
+    await initializeDatabase();
+  } catch (error) {
+    console.error("Failed to initialize database:", error);
+    process.exit(1); // Exit if database initialization fails
+  }
+}
+
+startServer();
+
 const gracefulShutdown = () => {
   console.log("Received kill signal, shutting down gracefully.");
   server.close(() => {
@@ -36,7 +100,24 @@ const gracefulShutdown = () => {
     process.exit(0);
   });
 
-  // If after 10 seconds, forcefully shut down the process
+  if (isPostgresRunning()) {
+    console.log("Stopping PostgreSQL...");
+    try {
+      execSync(`"${postgresPath}" stop -D "${dataPath}"`, { stdio: "inherit" });
+      console.log("PostgreSQL stopped.");
+    } catch (error) {
+      console.error("Failed to stop PostgreSQL:", error.message);
+    }
+  }
+
+  // Optional: Force kill Node.js processes
+  try {
+    execSync("taskkill /F /IM node.exe /T", { stdio: "ignore" });
+    console.log("Force killed all Node.js processes.");
+  } catch (error) {
+    console.error("Failed to force kill Node.js:", error.message);
+  }
+
   setTimeout(() => {
     console.error(
       "Could not close connections in time, forcefully shutting down"
@@ -45,6 +126,5 @@ const gracefulShutdown = () => {
   }, 10000);
 };
 
-// Listen for termination signals
 process.on("SIGTERM", gracefulShutdown);
 process.on("SIGINT", gracefulShutdown);

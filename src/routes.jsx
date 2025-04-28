@@ -1,4 +1,5 @@
 import { lazy } from "react";
+import MainContentWrapper from "./components/MainContentWrapper";
 
 // Lazy load components to improve performance
 const Dashboard = lazy(() => import("./components/pages/Dashboard"));
@@ -44,32 +45,214 @@ const Forwardsale = lazy(() =>
 
 // Define route configuration
 const routes = [
-  { path: "/dashboard", element: <Dashboard /> },
-  { path: "/purchase", element: <Purchase /> },
-  { path: "/sales", element: <Sales /> },
-  { path: "/forwardPurchase", element: <ForwardPurchase /> },
-  { path: "/forwardSell", element: <ForwardSell /> },
-  { path: "/allReports", element: <AllReports /> },
-  { path: "/create", element: <Create /> },
-  { path: "/ledger", element: <Ledger /> },
-  { path: "/payments", element: <Payments /> },
-  { path: "/notifications", element: <Notifications /> },
-  { path: "/profile", element: <Profile /> },
-  { path: "/settings", element: <Settings /> },
-  { path: "/logout", element: <Logout /> },
-  { path: "/broker", element: <Broker /> },
-  { path: "/creditors", element: <Creditors /> },
-  { path: "/debtors", element: <Debtors /> },
-  { path: "/inventory", element: <Inventory /> },
-  { path: "/warehouse", element: <Warehouse /> },
-  { path: "/stock", element: <Stock /> },
-  { path: "/dobook", element: <DObook /> },
-  { path: "/purchaseReg", element: <PurchaseReg /> },
-  { path: "/outstanding", element: <Outstanding /> },
-  { path: "/forwardPur", element: <ForwardPur /> },
-  { path: "/forwardsale", element: <Forwardsale /> },
-  { path: "/companies", element: <CompanyList /> },
-  { path: "/comp-create", element: <CompanyForm /> },
+  {
+    path: "/dashboard",
+    element: (
+      <MainContentWrapper>
+        <Dashboard />
+      </MainContentWrapper>
+    ),
+  },
+  {
+    path: "/purchase",
+    element: (
+      <MainContentWrapper>
+        <Purchase />
+      </MainContentWrapper>
+    ),
+  },
+  {
+    path: "/sales",
+    element: (
+      <MainContentWrapper>
+        <Sales />
+      </MainContentWrapper>
+    ),
+  },
+  {
+    path: "/forwardPurchase",
+    element: (
+      <MainContentWrapper>
+        <ForwardPurchase />
+      </MainContentWrapper>
+    ),
+  },
+  {
+    path: "/forwardSell",
+    element: (
+      <MainContentWrapper>
+        <ForwardSell />
+      </MainContentWrapper>
+    ),
+  },
+  {
+    path: "/allReports",
+    element: (
+      <MainContentWrapper>
+        <AllReports />
+      </MainContentWrapper>
+    ),
+  },
+  {
+    path: "/create",
+    element: (
+      <MainContentWrapper>
+        <Create />
+      </MainContentWrapper>
+    ),
+  },
+  {
+    path: "/ledger",
+    element: (
+      <MainContentWrapper>
+        <Ledger />
+      </MainContentWrapper>
+    ),
+  },
+  {
+    path: "/payments",
+    element: (
+      <MainContentWrapper>
+        <Payments />
+      </MainContentWrapper>
+    ),
+  },
+  {
+    path: "/notifications",
+    element: (
+      <MainContentWrapper>
+        <Notifications />
+      </MainContentWrapper>
+    ),
+  },
+  {
+    path: "/profile",
+    element: (
+      <MainContentWrapper>
+        <Profile />
+      </MainContentWrapper>
+    ),
+  },
+  {
+    path: "/settings",
+    element: (
+      <MainContentWrapper>
+        <Settings />
+      </MainContentWrapper>
+    ),
+  },
+  {
+    path: "/logout",
+    element: (
+      <MainContentWrapper>
+        <Logout />
+      </MainContentWrapper>
+    ),
+  },
+  {
+    path: "/broker",
+    element: (
+      <MainContentWrapper>
+        <Broker />
+      </MainContentWrapper>
+    ),
+  },
+  {
+    path: "/creditors",
+    element: (
+      <MainContentWrapper>
+        <Creditors />
+      </MainContentWrapper>
+    ),
+  },
+  {
+    path: "/debtors",
+    element: (
+      <MainContentWrapper>
+        <Debtors />
+      </MainContentWrapper>
+    ),
+  },
+  {
+    path: "/inventory",
+    element: (
+      <MainContentWrapper>
+        <Inventory />
+      </MainContentWrapper>
+    ),
+  },
+  {
+    path: "/warehouse",
+    element: (
+      <MainContentWrapper>
+        <Warehouse />
+      </MainContentWrapper>
+    ),
+  },
+  {
+    path: "/stock",
+    element: (
+      <MainContentWrapper>
+        <Stock />
+      </MainContentWrapper>
+    ),
+  },
+  {
+    path: "/dobook",
+    element: (
+      <MainContentWrapper>
+        <DObook />
+      </MainContentWrapper>
+    ),
+  },
+  {
+    path: "/purchaseReg",
+    element: (
+      <MainContentWrapper>
+        <PurchaseReg />
+      </MainContentWrapper>
+    ),
+  },
+  {
+    path: "/outstanding",
+    element: (
+      <MainContentWrapper>
+        <Outstanding />
+      </MainContentWrapper>
+    ),
+  },
+  {
+    path: "/forwardPur",
+    element: (
+      <MainContentWrapper>
+        <ForwardPur />
+      </MainContentWrapper>
+    ),
+  },
+  {
+    path: "/forwardsale",
+    element: (
+      <MainContentWrapper>
+        <Forwardsale />
+      </MainContentWrapper>
+    ),
+  },
+  {
+    path: "/companies",
+    element: (
+      <MainContentWrapper>
+        <CompanyList />
+      </MainContentWrapper>
+    ),
+  },
+  {
+    path: "/comp-create",
+    element: (
+      <MainContentWrapper>
+        <CompanyForm />
+      </MainContentWrapper>
+    ),
+  },
 ];
 
 export default routes;
